@@ -35,7 +35,8 @@ force_turbo=1
 
 It will look something like this:
 
-
+![GitHub Logo](https://sparklers-the-makers.github.io/blog/img/gps/t3.png)
+Format: ![Alt Text](url)
 
 
 
