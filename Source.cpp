@@ -3,7 +3,7 @@
 #include <string>
 #include <stdio.h>
 #include <conio.h>
-//#include <experimental/filesystem>
+#include <filesystem>
 #include <ctime>
 #include <istream>
 #include <iterator>
@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <sstream>
 #include <cstring>
+#include <functional>
 using namespace std;
 
 class htmltoexcel {
@@ -21,38 +22,41 @@ public:
 	ofstream check;
 	string input, line;
 	fstream myfile;
-	vector<vector<string> > myvector;
+	vector<vector<string>> myvector;
 	vector<string> passed;
 	vector<string> failed;
 	vector<string> data;
 	htmltoexcel(string fn);
-
 private:
-	string parse(char* string); //parse //write
-	void start(string fileName); //sort
+	string parse(char* string); 
+	void intial(string fileName); 
 	void chj(string line);
 	string removespace(string line);
 	void pass();
 	void fail();
+	void others();
 };
 
+/*--------------CONSTRUCTOR - START----------------------------*/
 htmltoexcel::htmltoexcel(string fn)
 {
 	string filename = fn;
-	start(fn);
+	intial(fn);
 	pass();
 	fail();
+	others();
 }
+/*--------------CONSTRUCTOR- END-------------------------------*/
 
-void htmltoexcel:: start(string fileName)
+/*--------------INTIAL - START---------------------------------*/
+void htmltoexcel::intial(string fileName)
 {
-	check.open("Check.csv", ios::out);
 	myfile.open(fileName.c_str(), ios::in | ios::app);
 	if (!myfile)
 	{
 		cout << "file cannot open!";
 	}
-	//getline(myfile, input);
+
 	while (line != "</html>")
 	{
 		line = removespace(line);
@@ -64,28 +68,19 @@ void htmltoexcel:: start(string fileName)
 			data.clear();
 		}
 	}
-
-	for (int i = 0; i < myvector.size(); i++) {
-		for (int j = 0; j < myvector[i].size(); j++) {
-			check << myvector[i][j] << ",";
-		}
-		check << "\n";
-
-	}
-
-	cout << "--------------" << endl;
-	cout << "\n OUTPUT : CHECK.csv\n";
-	//sort();
-	check.close();
 }
+/*--------------INTIAL - END-----------------------------------*/
 
-string htmltoexcel:: removespace(string line)
+/*--------------REMOVE SPACES - START--------------------------*/
+string htmltoexcel::removespace(string line)
 {
 	line.erase(remove(line.begin(), line.end(), ' '), line.end());
 	return line;
 }
+/*--------------REMOVE SPACES - END----------------------------*/
 
-void htmltoexcel:: chj(string line)
+/*--------------CHECK TAG - START------------------------------*/
+void htmltoexcel::chj(string line)
 {
 	char* char_arr;
 	int c = 0;
@@ -95,8 +90,9 @@ void htmltoexcel:: chj(string line)
 		data.push_back(parse(char_arr));
 	}
 }
+/*--------------CHECK TAG - END--------------------------------*/
 
-/*--------------PARSE----------------------------------*/
+/*--------------PARSE - START----------------------------------*/
 string htmltoexcel::parse(char* string)
 {
 	int index = 0, in = 0;
@@ -118,20 +114,22 @@ string htmltoexcel::parse(char* string)
 		}
 	}
 	string[index] = '\0';
-
 	return string;
 }
-/*--------------PARSE - END----------------------------------*/
+/*--------------PARSE - END------------------------------------*/
 
+/*--------------PASSED.csv START-------------------------------*/
 void htmltoexcel::pass()
 {
 	ofstream passed_file;
-	passed_file.open("passed_file.csv", ios::out);
+	passed_file.open("passed.csv", ios::out);
 
 	for (int j = 0; j < myvector[0].size(); j++) {
 		passed_file << myvector[0][j] << ",";
 	}
 	passed_file << "\n";
+
+	sort(myvector[0].begin(), myvector[0].end(), greater <>());
 
 	for (int i = 1; i < myvector.size(); i++) {
 
@@ -143,20 +141,24 @@ void htmltoexcel::pass()
 		}
 	}
 	cout << "--------------" << endl;
-	cout << "\n OUTPUT : passed_file.csv\n";
+	cout << "\n OUTPUT : passed.csv\n";
 	//sort();
 	passed_file.close();
 }
+/*--------------PASSED.csv END---------------------------------*/
 
+/*--------------FAILED.csv START-------------------------------*/
 void htmltoexcel::fail()
 {
 	ofstream failed_file;
-	failed_file.open("failed_file.csv", ios::out);
+	failed_file.open("failed.csv", ios::out);
 
 	for (int j = 0; j < myvector[0].size(); j++) {
 		failed_file << myvector[0][j] << ",";
 	}
 	failed_file << "\n";
+
+	sort(myvector[0].begin(), myvector[0].end(), less<string>());
 
 	for (int i = 1; i < myvector.size(); i++) {
 
@@ -168,18 +170,47 @@ void htmltoexcel::fail()
 		}
 	}
 	cout << "--------------" << endl;
-	cout << "\n OUTPUT : failed_file.csv\n";
+	cout << "\n OUTPUT : failed.csv\n";
 	//sort();
 	failed_file.close();
-
 }
+/*--------------FAILED.csv END---------------------------------*/
 
+/*--------------OTHERS.csv START-------------------------------*/
+void htmltoexcel::others()
+{
+	ofstream others_file;
+	others_file.open("Others.csv", ios::out);
+
+	for (int j = 0; j < myvector[0].size(); j++) {
+		others_file << myvector[0][j] << ",";
+	}
+	others_file << "\n";
+
+	sort(myvector[0].begin(), myvector[0].end(), greater <string>());
+
+	for (int i = 1; i < myvector.size(); i++) {
+
+		if (myvector[i][1] == "OTHERS") {
+			for (int j = 0; j < myvector[i].size(); j++) {
+				others_file << myvector[i][j] << ",";
+			}
+			others_file << "\n";
+		}
+	}
+	cout << "--------------" << endl;
+	cout << "\n OUTPUT : Others.csv\n";
+	//sort();
+	others_file.close();
+}
+/*--------------OTHERS.csv END---------------------------------*/
+
+/*--------------MAIN - START-----------------------------------*/
 int main()
 {
-	int i = 0; //Variable to track whether we are inside the tag
 	string fileName = "Results.html";
 	htmltoexcel abc(fileName);
 	system("Pause");
 	return 0;
 }
-
+/*--------------MAIN -END--------------------------------------*/
