@@ -39,7 +39,6 @@ class htmltoexcel {
 public:
 
     int x = 0;
-    ofstream check;
     string input, line;
     fstream myfile;
     vector<vector<string>> myvector;
@@ -48,13 +47,11 @@ public:
     vector<string> data;
     htmltoexcel(string fn);
 private:
-    string Parsed(char* string);
+    string Parsed(string string);
     void intial(string fileName);
     void Search(string line);
     string rspace(string line);
-    void Passed();
-    void Failed();
-    void Others();
+    void Splits();
 };
 
 /*--------------CONSTRUCTOR - START----------------------------*/
@@ -64,11 +61,7 @@ htmltoexcel::htmltoexcel(string fn)
     logfile(__LINE__, "constr()", "Calling intial()");
     intial(fn);
     logfile(__LINE__, "constr()", "Calling Passed()");
-    Passed();
-    logfile(__LINE__, "constr()", "Calling Failed()");
-    Failed();
-    logfile(__LINE__, "constr()", "Calling Others()");
-    Others();
+    Splits();
 }
 /*--------------CONSTRUCTOR- END-------------------------------*/
 
@@ -84,7 +77,7 @@ void htmltoexcel::intial(string fileName)
     }
     logfile(__LINE__, "intial()", "Reading Results.html");
     while (line != "</html>") {
-        line = rspace(line);
+       // line = rspace(line);
         logfile(__LINE__, "intial()", "Calling Check()");
         Search(line);
         logfile(__LINE__, "intial()", "Read Next line");
@@ -97,14 +90,6 @@ void htmltoexcel::intial(string fileName)
 }
 /*--------------INTIAL - END-----------------------------------*/
 
-/*--------------REMOVE SPACES - START--------------------------*/
-string htmltoexcel::rspace(string line)
-{
-    line.erase(remove(line.begin(), line.end(), ' '), line.end());
-    return line;
-}
-/*--------------REMOVE SPACES - END----------------------------*/
-
 /*--------------CHECK TAG - START------------------------------*/
 void htmltoexcel::Search(string line)
 {
@@ -113,50 +98,50 @@ void htmltoexcel::Search(string line)
     if ((line.find("<tr>") > line.length()) && (line.find("</tr>") > line.length()) && (line.find("<td>") < line.length()))
     {
         logfile(__LINE__, "Search()", "Calling Parse()");
-        char_arr = &line[0];
-        data.push_back(Parsed(char_arr));
+        data.push_back(Parsed(line));
     }
     logfile(__LINE__, "Search()", "Line Parsed.");
 }
 /*--------------CHECK TAG - END--------------------------------*/
 
 /*--------------PARSE - START----------------------------------*/
-string htmltoexcel::Parsed(char* string)
+string htmltoexcel::Parsed(string str)
 {
     int index = 0, in = 0;
-    logfile(__LINE__, "Parsed()", "Removing tags, Extracting Comment");
-    for (int i = 0; i < strlen(string); i++)
-    {
-        if (string[i] == '<') {
-            in = 1;
-            continue;
-        }
-        else if (string[i] == '>') {
-            in = 0;
-            continue;
-        }
-        if (in == 0) {
-            string[index] = string[i];
-            index++;
-        }
-    }
-    string[index] = '\0';
-    return string;
+    string r;
+    logfile(__LINE__, "Parsed()", "Removing tags, Extracting Comment");   
+    int x = str.find("<td>");
+    int y = str.find("</td>");
+    r = str.substr((x+4), (y-8));
+    return r;
 }
 /*--------------PARSE - END------------------------------------*/
 
 /*--------------PASSED.csv START-------------------------------*/
-void htmltoexcel::Passed()
+void htmltoexcel::Splits()
 {
     ofstream passed_file;
     passed_file.open("passed.csv", ios::out);
     logfile(__LINE__, "Passed()", "Creating Passed.csv");
+
+    ofstream failed_file;
+    failed_file.open("failed.csv", ios::out);
+    logfile(__LINE__, "Failed()", "Creating failed.csv");
+
+    ofstream others_file;
+    others_file.open("Others.csv", ios::out);
+    logfile(__LINE__, "Others()", "Creating others.csv");
+
     for (int j = 0; j < myvector[0].size(); j++) {
         passed_file << myvector[0][j] << ",";
+        failed_file << myvector[0][j] << ",";
+        others_file << myvector[0][j] << ",";
     }
     passed_file << "\n";
+    failed_file << "\n";
+    others_file << "\n";
     //-------------------------------SORT()--------------------------------------------------
-    logfile(__LINE__, "Passed()", "Sorting by Date(desc)");
+    logfile(__LINE__, "Splits()", "Sorting by Date(desc)");
     map<string, vector<string>, greater<string>> mymap;
     string key;
     vector<string> m; // Inserting the elements one by one 
@@ -172,11 +157,46 @@ void htmltoexcel::Passed()
     map<string, vector<string>> ::iterator it;
     for (it = mymap.begin(); it != mymap.end(); it++) {
         vector<string> v1 = it->second;
+        //=====================Passed======================
         if (v1[1] == "PASSED") {
             for (int k = 0; k < v1.size(); k++) {
-                passed_file << v1[k] << ",";
+                if(k == (v1.size()-1)) {
+                string t = v1[k];
+                string fg = "\""+v1[k]+"\"";
+                passed_file << fg << ",";
             }
-            passed_file << endl;
+            else {
+                passed_file << v1[k] << ",";/* code */
+            }             
+          }
+        }
+        //======================Failed=====================
+        if (v1[1] == "FAILED") {
+        for (int k = 0; k < v1.size(); k++) {
+                if(k == (v1.size()-1)) {
+                string t = v1[k];
+                string fg = "\""+v1[k]+"\"";
+                failed_file << fg << ",";
+            }
+            else {
+                failed_file << v1[k] << ",";/* code */
+            }               
+          }
+             failed_file << endl;
+        }
+        //======================Others======================
+        if (v1[1] == "ABORT") {
+            for (int k = 0; k < v1.size(); k++) {
+              if(k == (v1.size()-1)) {
+                string t = v1[k];
+                string fg = "\""+v1[k]+"\"";
+                others_file << fg << ",";
+            }
+            else {
+                others_file << v1[k] << ",";/* code */
+            }               
+          }
+            others_file << endl;
         }
     }
     logfile(__LINE__, "Passed()", "Data Entry Complete");
@@ -184,91 +204,20 @@ void htmltoexcel::Passed()
     cout << "\n OUTPUT : passed.csv\n";
     passed_file.close();
     logfile(__LINE__, "Passed()", "Closing Passed.csv");
-}
-/*--------------PASSED.csv END---------------------------------*/
 
-/*--------------FAILED.csv START-------------------------------*/
-void htmltoexcel::Failed()
-{
-    ofstream failed_file;
-    failed_file.open("failed.csv", ios::out);
-    logfile(__LINE__, "Failed()", "Creating failed.csv");
-    for (int j = 0; j < myvector[0].size(); j++) {
-        failed_file << myvector[0][j] << ",";
-    }
-    failed_file << "\n";
-    //-------------------------------SORT()-------------------------------------------------
-    logfile(__LINE__, "Failed()", "Sorting by Date(desc)");
-    map<string, vector<string>, greater<string>> mymap;
-    string key;
-    vector<string> m; // Inserting the elements one by one 
-    for (int i = 1; i < myvector.size(); i++) {
-        key = myvector[i][0];
-        for (int j = 0; j < myvector[i].size(); j++) {
-            m = myvector[i];
-        }
-        mymap.insert(make_pair(key, m));
-    }
-    //-------------------------------Write into Respective file()--------------------------
-    logfile(__LINE__, "Failed()", "Checking FAILED Status");
-    map<string, vector<string>> ::iterator it;
-    for (it = mymap.begin(); it != mymap.end(); it++) {
-        vector<string> v1 = it->second;
-        if (v1[1] == "FAILED") {
-            for (int k = 0; k < v1.size(); k++) {
-                failed_file << v1[k] << ",";
-            }
-            failed_file << endl;
-        }
-    }
     logfile(__LINE__, "Failed()", "Data Entry Complete");
     cout << "--------------" << endl;
     cout << "\n OUTPUT : failed.csv\n";
     failed_file.close();
     logfile(__LINE__, "Failed()", "Closing failed.csv");
-}
-/*--------------FAILED.csv END---------------------------------*/
 
-/*--------------OTHERS.csv START-------------------------------*/
-void htmltoexcel::Others()
-{
-    ofstream others_file;
-    others_file.open("Others.csv", ios::out);
-    logfile(__LINE__, "Others()", "Creating others.csv");
-    for (int j = 0; j < myvector[0].size(); j++) {
-        others_file << myvector[0][j] << ",";
-    }
-    //-------------------------------SORT()-----------------------------------------------
-    logfile(__LINE__, "Others()", "Sorting by Date(desc)");
-    map<string, vector<string>, greater<string>> mymap;
-    string key;
-    vector<string> m; // Inserting the elements one by one 
-    for (int i = 1; i < myvector.size(); i++) {
-        key = myvector[i][0];
-        for (int j = 0; j < myvector[i].size(); j++) {
-            m = myvector[i];
-        }
-        mymap.insert(make_pair(key, m));
-    }
-    //-------------------------------Write into Respective file()-------------------------
-    logfile(__LINE__, "Others()", "Checking Other Status");
-    map<string, vector<string>> ::iterator it;
-    for (it = mymap.begin(); it != mymap.end(); it++) {
-        vector<string> v1 = it->second;
-        if (v1[1] == "Others") {
-            for (int k = 0; k < v1.size(); k++) {
-                others_file << v1[k] << ",";
-            }
-            others_file << endl;
-        }
-    }
     logfile(__LINE__, "Others()", "Data Entry Complete");
     cout << "--------------" << endl;
     cout << "\n OUTPUT : Others.csv\n";
     others_file.close();
     logfile(__LINE__, "Others()", "Closing Others.csv");
 }
-/*--------------OTHERS.csv END---------------------------------*/
+/*--------------Wite into .csv File END---------------------------------*/
 
 /*--------------MAIN - START-----------------------------------*/
 int main()
