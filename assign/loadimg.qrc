@@ -1,8 +1,0 @@
-<RCC>
-    <qresource prefix="/loadimg">
-        <file>if_17_330399.png</file>
-        <file>if_ic_error_48px_351983.png</file>
-        <file>icon.png</file>
-        <file>icontag.ico</file>
-    </qresource>
-</RCC>
