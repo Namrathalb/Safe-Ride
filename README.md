@@ -9,27 +9,3 @@ A solution to this problem is to develop a system which captures the geographica
 
 
 
-hello i have question
-
-i have webpage opened with Qwebengine view
-
-now there are links in that webpage so when i double click or cick the link i want it to open in a new dialog.ui which has qwebengine view
-
-like in maindow page i have
-
-ui->view->load(str);
-
-that has some links in the site i am using modeless approach to open new dialog when the link is triggered.
-
-QAction* openInNewTab = ui->view->pageAction(QWebEnginePage::OpenLinkInNewTab);
-connect(openInNewTab, SIGNAL(triggered()), this, SLOT(on_actionNewTab_triggered()));
-
-it opens a empty dialog even i though i have defined on_actionnewtab_trigger()
-
-QObject *senderObj = sender();
-QString readnews = senderObj->objectName();
-d = new Dialog ();
-d->show();
-d->read(readnews);
-
-where am i doing wrong???
